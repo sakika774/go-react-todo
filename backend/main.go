@@ -11,6 +11,7 @@ import (
 type Todo struct {
 	ID   int    `json:"id"`
 	Task string `json:"task"`
+	Done bool   `json:"done"`
 }
 
 var (
@@ -96,6 +97,39 @@ func main() {
 	return
 		}
 	})
+
+	http.HandleFunc("/todos/toggle", func(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Access-Control-Allow-Methods", "PATCH, OPTIONS")
+	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+
+	if r.Method == http.MethodOptions {
+		w.WriteHeader(http.StatusOK)
+		return
+	}
+
+	if r.Method == http.MethodPatch {
+		idStr := r.URL.Query().Get("id")
+		if idStr == "" {
+			w.WriteHeader(http.StatusBadRequest)
+			return
+		}
+		var id int
+		fmt.Sscanf(idStr, "%d", &id)
+
+		mu.Lock()
+		defer mu.Unlock()
+		for i, t := range todos {
+			if t.ID == id {
+				todos[i].Done = !todos[i].Done
+				saveTodos()
+				break
+			}
+		}
+		w.WriteHeader(http.StatusOK)
+		return
+	}
+})
 	
 	fmt.Println("Server running on http://localhost:8080")
 	http.ListenAndServe(":8080", nil)

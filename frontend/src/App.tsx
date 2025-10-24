@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react'
 type Todo = {
   id: number
   task: string
+  done: boolean
 }
 
 function App() {
@@ -17,6 +18,11 @@ function App() {
 
   const deleteTodo = (id: number) => {
     fetch(`http://localhost:8080/todos?id=${id}`, { method: 'DELETE' })
+      .then(() => fetchTodos())
+  }
+
+  const toggleTodo = (id: number) => {
+    fetch(`http://localhost:8080/todos/toggle?id=${id}`, { method: 'PATCH' })
       .then(() => fetchTodos())
   }
 
@@ -44,7 +50,14 @@ function App() {
       <ul>
         {todos.map(todo => (
           <li key={todo.id}>
-            {todo.task}
+            <input
+              type="checkbox"
+              checked={todo.done}
+              onChange={() => toggleTodo(todo.id)}
+            />
+            <span style={{ textDecoration: todo.done ? 'line-through' : 'none' }}>
+              {todo.task}
+            </span>
             <button onClick={() => deleteTodo(todo.id)}>削除</button>
           </li>
         ))}
