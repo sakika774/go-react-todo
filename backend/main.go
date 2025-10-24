@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"sync"
 )
@@ -16,9 +17,31 @@ var (
 	todos []Todo
 	idSeq = 1
 	mu    sync.Mutex
+	file  = "todos.json"
 )
 
+// ファイル読み込み
+func loadTodos() {
+	data, err := ioutil.ReadFile(file)
+	if err == nil {
+		json.Unmarshal(data, &todos)
+		for _, t := range todos {
+			if t.ID >= idSeq {
+				idSeq = t.ID + 1
+			}
+		}
+	}
+}
+
+// ファイル保存
+func saveTodos() {
+	data, _ := json.MarshalIndent(todos, "", "  ")
+	ioutil.WriteFile(file, data, 0644)
+}
+
 func main() {
+	loadTodos()
+
 	http.HandleFunc("/todos", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Access-Control-Allow-Origin", "*")
 		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
@@ -46,17 +69,12 @@ func main() {
 			t.ID = idSeq
 			idSeq++
 			todos = append(todos, t)
+			saveTodos()
 			mu.Unlock()
 			json.NewEncoder(w).Encode(t)
 			return
 		}
 	})
-
-	// 初期データ
-	todos = append(todos, Todo{ID: idSeq, Task: "React勉強"})
-	idSeq++
-	todos = append(todos, Todo{ID: idSeq, Task: "Go API作成"})
-	idSeq++
 
 	fmt.Println("Server running on http://localhost:8080")
 	http.ListenAndServe(":8080", nil)
