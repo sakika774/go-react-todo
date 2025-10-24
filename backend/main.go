@@ -44,7 +44,7 @@ func main() {
 
 	http.HandleFunc("/todos", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Access-Control-Allow-Origin", "*")
-		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, DELETE, OPTIONS")
 		w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
 
 		if r.Method == http.MethodOptions {
@@ -74,8 +74,29 @@ func main() {
 			json.NewEncoder(w).Encode(t)
 			return
 		}
+		
+		if r.Method == http.MethodDelete {
+	idStr := r.URL.Query().Get("id")
+	if idStr == "" {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+	var id int
+	fmt.Sscanf(idStr, "%d", &id)
+	mu.Lock()
+	defer mu.Unlock()
+	for i, t := range todos {
+		if t.ID == id {
+			todos = append(todos[:i], todos[i+1:]...)
+			saveTodos()
+			break
+		}
+	}
+	w.WriteHeader(http.StatusOK)
+	return
+		}
 	})
-
+	
 	fmt.Println("Server running on http://localhost:8080")
 	http.ListenAndServe(":8080", nil)
 }

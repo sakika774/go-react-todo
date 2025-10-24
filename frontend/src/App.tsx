@@ -15,6 +15,11 @@ function App() {
       .then(data => setTodos(data))
   }
 
+  const deleteTodo = (id: number) => {
+    fetch(`http://localhost:8080/todos?id=${id}`, { method: 'DELETE' })
+      .then(() => fetchTodos())
+  }
+
   useEffect(() => {
     fetchTodos()
   }, [])
@@ -38,7 +43,10 @@ function App() {
       <h1>Todo List</h1>
       <ul>
         {todos.map(todo => (
-          <li key={todo.id}>{todo.task}</li>
+          <li key={todo.id}>
+            {todo.task}
+            <button onClick={() => deleteTodo(todo.id)}>削除</button>
+          </li>
         ))}
       </ul>
       <input
