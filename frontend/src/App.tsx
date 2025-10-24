@@ -7,12 +7,31 @@ type Todo = {
 
 function App() {
   const [todos, setTodos] = useState<Todo[]>([])
+  const [newTask, setNewTask] = useState('')
 
-  useEffect(() => {
+  const fetchTodos = () => {
     fetch('http://localhost:8080/todos')
       .then(res => res.json())
       .then(data => setTodos(data))
+  }
+
+  useEffect(() => {
+    fetchTodos()
   }, [])
+
+  const addTodo = () => {
+    if (!newTask) return
+    fetch('http://localhost:8080/todos', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ task: newTask })
+    })
+      .then(res => res.json())
+      .then(() => {
+        setNewTask('')
+        fetchTodos()
+      })
+  }
 
   return (
     <div>
@@ -22,6 +41,13 @@ function App() {
           <li key={todo.id}>{todo.task}</li>
         ))}
       </ul>
+      <input
+        type="text"
+        value={newTask}
+        onChange={e => setNewTask(e.target.value)}
+        placeholder="新しいTodo"
+      />
+      <button onClick={addTodo}>追加</button>
     </div>
   )
 }
